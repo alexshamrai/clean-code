@@ -5,40 +5,47 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 public class GildedRoseADefaultItemTest {
-	/**
-	 * Method to test the variation in quality of the item for the non expired
-	 * Item.
-	 * 
-	 * The quality should decrease by 1 when the item is not expired
-	 * and sell in should decrease by 1.
-	 * 
-	 */
+
+	private static final String DEFAULT_ITEM_NAME = "DEFAULT_ITEM";
+	private static final int QUALITY = 3;
+	private static final int NON_EXPIRED_ITEM_SELL_IN = 15;
+	private static final int EXPIRED_ITEM_SELL_IN = -1;
+
 	@Test
-	public void testUpdateQualityDefault1() {
-		Item item = new Item("DEFAULT_ITEM", 15, 3);
-		Item[] items = new Item[] { item };
-		GildedRose app = new GildedRose(items);
+	public void testNonExpiredItemQualityDecreasesByOne() {
+		GildedRose app = setupGildedRoseWithItem(NON_EXPIRED_ITEM_SELL_IN, QUALITY);
 		app.updateQuality();
-		assertEquals("DEFAULT_ITEM", app.items[0].name);
-		assertEquals(14, app.items[0].sellIn);
-		assertEquals(2, app.items[0].quality);
+
+		Item actualItem = getFirstItem(app);
+		Item expectedItem = new Item(DEFAULT_ITEM_NAME, NON_EXPIRED_ITEM_SELL_IN - 1, QUALITY -1);
+
+		assertItem(expectedItem, actualItem);
 	}
 
-	/**
-	 * Method to test the variation in quality of the item for the non expired
-	 * Item.
-	 * 
-	 * The quality should decrease by 2 when the item is expired(Sell in  < 0) and sell in should decrease by 1.
-	 * 
-	 */
 	@Test
-	public void testUpdateQualityForExpiredItem() {
-		Item item = new Item("DEFAULT_ITEM", -1, 3);
-		Item[] items = new Item[] { item };
-		GildedRose app = new GildedRose(items);
+	public void testExpiredItemQualityDecreasesByTwo() {
+		GildedRose app = setupGildedRoseWithItem(EXPIRED_ITEM_SELL_IN, QUALITY);
 		app.updateQuality();
-		assertEquals("DEFAULT_ITEM", app.items[0].name);
-		assertEquals(-2, app.items[0].sellIn);
-		assertEquals(1, app.items[0].quality);
+
+		Item actualItem = getFirstItem(app);
+		Item expectedItem = new Item(DEFAULT_ITEM_NAME, EXPIRED_ITEM_SELL_IN - 1, QUALITY -2);
+
+		assertItem(expectedItem, actualItem);
+	}
+
+	private GildedRose setupGildedRoseWithItem(int sellIn, int quality) {
+		Item item = new Item(DEFAULT_ITEM_NAME, sellIn, quality);
+		Item[] items = new Item[] { item };
+		return new GildedRose(items);
+	}
+
+	private Item getFirstItem(GildedRose app) {
+		return app.items[0];
+	}
+
+	private void assertItem(Item expectedItem, Item actualItem) {
+		assertEquals(expectedItem.name, actualItem.name);
+		assertEquals(expectedItem.sellIn, actualItem.sellIn);
+		assertEquals(expectedItem.quality, actualItem.quality);
 	}
 }
