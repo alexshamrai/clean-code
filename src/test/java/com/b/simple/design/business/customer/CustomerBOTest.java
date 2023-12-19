@@ -1,12 +1,15 @@
 package com.b.simple.design.business.customer;
 
+import static com.b.simple.design.model.customer.Currency.EURO;
+import static com.b.simple.design.model.customer.Currency.INDIAN_RUPEE;
+import static com.b.simple.design.model.customer.ProductType.BANK_GUARANTEE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.b.simple.design.business.exception.DifferentCurrenciesException;
@@ -15,68 +18,53 @@ import com.b.simple.design.model.customer.AmountImpl;
 import com.b.simple.design.model.customer.Currency;
 import com.b.simple.design.model.customer.Product;
 import com.b.simple.design.model.customer.ProductImpl;
-import com.b.simple.design.model.customer.ProductType;
 
 public class CustomerBOTest {
+
+	private static final int DEFAULT_PRODUCT_ID = 100;
+	private static final String DEFAULT_PRODUCT_NAME = "Product 15";
 
 	private CustomerBO customerBO = new CustomerBOImpl();
 
 	@Test
-	public void testCustomerProductSum_TwoProductsSameCurrencies()
-			throws DifferentCurrenciesException {
+	public void testCustomerProductSumWithTheSameCurrency() throws DifferentCurrenciesException {
 
-		List<Product> products = new ArrayList<Product>();
+		List<Product> products = List.of(createNewProduct(createAmount("5.0", EURO)),
+										 createNewProduct(createAmount("6.0", EURO)));
 
-		products.add(
-				new ProductImpl(100, "Product 15", ProductType.BANK_GUARANTEE,
-						new AmountImpl(new BigDecimal("5.0"), Currency.EURO)));
+		Amount actualAmount = customerBO.getCustomerProductsSum(products);
+		Amount expectedAmount = createAmount("11.0", EURO);
 
-		products.add(
-				new ProductImpl(120, "Product 20", ProductType.BANK_GUARANTEE,
-						new AmountImpl(new BigDecimal("6.0"), Currency.EURO)));
-
-		Amount temp = customerBO.getCustomerProductsSum(products);
-
-		assertEquals(Currency.EURO, temp.getCurrency());
-		assertEquals(new BigDecimal("11.0"), temp.getValue());
+		assertAmount(actualAmount, expectedAmount);
 	}
 
 	@Test
-	public void testCustomerProductSum1() {
+	public void testCustomerProductSumWithDifferentCurrency() {
+		List<Product> products = List.of(createNewProduct(createAmount("5.0", INDIAN_RUPEE)),
+				createNewProduct(createAmount("6.0", EURO)));
 
-		List<Product> products = new ArrayList<Product>();
-
-		products.add(new ProductImpl(100, "Product 15",
-				ProductType.BANK_GUARANTEE,
-				new AmountImpl(new BigDecimal("5.0"), Currency.INDIAN_RUPEE)));
-
-		products.add(
-				new ProductImpl(120, "Product 20", ProductType.BANK_GUARANTEE,
-						new AmountImpl(new BigDecimal("6.0"), Currency.EURO)));
-
-		@SuppressWarnings("unused")
-		Amount temp = null;
-
-		try {
-			temp = customerBO.getCustomerProductsSum(products);
-			fail("DifferentCurrenciesException is expected");
-		} catch (DifferentCurrenciesException e) {
-		}
+		Assertions.assertThrows(DifferentCurrenciesException.class, ()-> customerBO.getCustomerProductsSum(products));
 	}
 
 	@Test
-	public void testCustomerProductSum2() {
+	public void testCustomerProductSumEmptyProducts() throws DifferentCurrenciesException {
+		Amount actualAmount = customerBO.getCustomerProductsSum(Collections.emptyList());
+		Amount expectedAmount = createAmount("0", EURO);
 
-		List<Product> products = new ArrayList<Product>();
+		assertAmount(actualAmount, expectedAmount);
+	}
 
-		Amount temp = null;
+	private static void assertAmount(Amount actualAmount, Amount expectedAmount) {
+		assertEquals(expectedAmount.getCurrency(), actualAmount.getCurrency());
+		assertEquals(expectedAmount.getValue(), actualAmount.getValue());
+	}
 
-		try {
-			temp = customerBO.getCustomerProductsSum(products);
-		} catch (DifferentCurrenciesException e) {
-		}
-		assertEquals(Currency.EURO, temp.getCurrency());
-		assertEquals(BigDecimal.ZERO, temp.getValue());
+	private ProductImpl createNewProduct(Amount amount) {
+		return new ProductImpl(DEFAULT_PRODUCT_ID, DEFAULT_PRODUCT_NAME, BANK_GUARANTEE, amount);
+	}
+
+	private static AmountImpl createAmount(String value, Currency currency) {
+		return new AmountImpl(new BigDecimal(value), currency);
 	}
 
 }
