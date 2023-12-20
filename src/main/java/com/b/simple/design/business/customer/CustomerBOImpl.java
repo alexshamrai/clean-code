@@ -9,35 +9,37 @@ import com.b.simple.design.model.customer.AmountImpl;
 import com.b.simple.design.model.customer.Currency;
 import com.b.simple.design.model.customer.Product;
 
+import static com.b.simple.design.model.customer.Currency.EURO;
+import static java.math.BigDecimal.ZERO;
+
 public class CustomerBOImpl implements CustomerBO {
 
 	@Override
-	public Amount getCustomerProductsSum(List<Product> products)
-			throws DifferentCurrenciesException {
-		BigDecimal temp = BigDecimal.ZERO;
+	public Amount getCustomerProductsSum(List<Product> products) throws DifferentCurrenciesException {
+		if (products.isEmpty())
+			return new AmountImpl(ZERO, EURO);
 
-		if (products.size() == 0)
-			return new AmountImpl(temp, Currency.EURO);
-
-		// Throw Exception If Any of the product has a currency different from
-		// the first product
-		Currency firstProductCurrency = products.get(0).getAmount()
-				.getCurrency();
-
-		for (Product product : products) {
-			boolean currencySameAsFirstProduct = product.getAmount()
-					.getCurrency().equals(firstProductCurrency);
-			if (!currencySameAsFirstProduct) {
-				throw new DifferentCurrenciesException();
-			}
+		if(!isCurrencyIsTheSameForAllProducts(products)) {
+			throw new DifferentCurrenciesException();
 		}
 
-		// Calculate Sum of Products
+		return calculateProductsSum(products);
+	}
+
+	private AmountImpl calculateProductsSum(List<Product> products) {
+		BigDecimal sum = ZERO;
+		Currency currency = products.get(0).getAmount().getCurrency();
 		for (Product product : products) {
-			temp = temp.add(product.getAmount().getValue());
+			sum = sum.add(product.getAmount().getValue());
 		}
-		
-		// Create new product
-		return new AmountImpl(temp, firstProductCurrency);
+
+		return new AmountImpl(sum, currency);
+	}
+
+	private boolean isCurrencyIsTheSameForAllProducts(List<Product> products) {
+		Currency firstProductCurrency = products.get(0).getAmount().getCurrency();
+		return products.stream()
+				.map(product -> product.getAmount().getCurrency())
+				.allMatch(currency -> currency.equals(firstProductCurrency));
 	}
 }
